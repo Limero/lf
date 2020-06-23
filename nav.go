@@ -28,6 +28,7 @@ const (
 type file struct {
 	os.FileInfo
 	linkState  linkState
+	linkTarget string
 	path       string
 	dirCount   int
 	accessTime time.Time
@@ -56,6 +57,7 @@ func readdir(path string) ([]*file, error) {
 		}
 
 		var linkState linkState
+		var linkTarget string
 
 		if lstat.Mode()&os.ModeSymlink != 0 {
 			stat, err := os.Stat(fpath)
@@ -64,6 +66,10 @@ func readdir(path string) ([]*file, error) {
 				lstat = stat
 			} else {
 				linkState = broken
+			}
+			linkTarget, err = os.Readlink(fpath)
+			if err != nil {
+				return files, err
 			}
 		}
 
@@ -85,6 +91,7 @@ func readdir(path string) ([]*file, error) {
 		files = append(files, &file{
 			FileInfo:   lstat,
 			linkState:  linkState,
+			linkTarget: linkTarget,
 			path:       fpath,
 			dirCount:   -1,
 			accessTime: at,
@@ -197,13 +204,13 @@ func (dir *dir) sort() {
 	// files to the first non-hidden file in the list
 	if gOpts.sortType.option&hiddenSort == 0 {
 		sort.SliceStable(dir.files, func(i, j int) bool {
-			if isHidden(dir.files[i]) && isHidden(dir.files[j]) {
+			if isHidden(dir.files[i], dir.path) && isHidden(dir.files[j], dir.path) {
 				return i < j
 			}
-			return isHidden(dir.files[i])
+			return isHidden(dir.files[i], dir.path)
 		})
 		for i, f := range dir.files {
-			if !isHidden(f) {
+			if !isHidden(f, dir.path) {
 				dir.files = dir.files[i:]
 				return
 			}
@@ -263,7 +270,8 @@ type nav struct {
 	regCache        map[string]*reg
 	saves           map[string]bool
 	marks           map[string]string
-	renameCache     []string
+	renameOldPath   string
+	renameNewPath   string
 	selections      map[string]int
 	selectionInd    int
 	height          int
@@ -352,7 +360,6 @@ func newNav(height int) *nav {
 		regCache:        make(map[string]*reg),
 		saves:           make(map[string]bool),
 		marks:           make(map[string]string),
-		renameCache:     make([]string, 2),
 		selections:      make(map[string]int),
 		selectionInd:    0,
 		height:          height,
@@ -615,8 +622,6 @@ func (nav *nav) toggle() {
 	}
 
 	nav.toggleSelection(curr.path)
-
-	nav.down(1)
 }
 
 func (nav *nav) invert() {
@@ -817,16 +822,11 @@ func (nav *nav) del(ui *ui) error {
 }
 
 func (nav *nav) rename() error {
-	oldPath := nav.renameCache[0]
-	newPath := nav.renameCache[1]
+	oldPath := nav.renameOldPath
+	newPath := nav.renameNewPath
+
 	dir, _ := filepath.Split(newPath)
 	os.MkdirAll(dir, os.ModePerm)
-
-	if _, err := os.Stat(newPath); err == nil { // file exists
-		if err := os.Remove(newPath); err != nil {
-			return err
-		}
-	}
 
 	if err := os.Rename(oldPath, newPath); err != nil {
 		return err
@@ -855,7 +855,7 @@ func (nav *nav) sync() error {
 }
 
 func (nav *nav) cd(wd string) error {
-	wd = strings.Replace(wd, "~", gUser.HomeDir, -1)
+	wd = replaceTilde(wd)
 	wd = filepath.Clean(wd)
 
 	if !filepath.IsAbs(wd) {
@@ -872,7 +872,7 @@ func (nav *nav) cd(wd string) error {
 }
 
 func (nav *nav) sel(path string) error {
-	path = strings.Replace(path, "~", gUser.HomeDir, -1)
+	path = replaceTilde(path)
 	path = filepath.Clean(path)
 
 	lstat, err := os.Stat(path)

@@ -133,8 +133,32 @@ func isExecutable(f os.FileInfo) bool {
 	return f.Mode()&0111 != 0
 }
 
-func isHidden(f os.FileInfo) bool {
-	return f.Name()[0] == '.'
+func isHidden(f os.FileInfo, path string) bool {
+	hidden := false
+	for _, pattern := range gOpts.hiddenfiles {
+		matched := matchPattern(strings.TrimPrefix(pattern, "!"), f.Name(), path)
+		if strings.HasPrefix(pattern, "!") && matched {
+			hidden = false
+		} else if matched {
+			hidden = true
+		}
+	}
+	return hidden
+}
+
+func matchPattern(pattern, name, path string) bool {
+	s := name
+
+	pattern = replaceTilde(pattern)
+
+	if filepath.IsAbs(pattern) {
+		s = filepath.Join(path, name)
+	}
+
+	// pattern errors are checked when 'hiddenfiles' option is set
+	matched, _ := filepath.Match(pattern, s)
+
+	return matched
 }
 
 func exportFiles(f string, fs []string) {

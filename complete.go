@@ -31,13 +31,11 @@ var (
 		"copy",
 		"cut",
 		"paste",
-		"delete",
 		"clear",
-		"draw",
 		"redraw",
-		"load",
 		"reload",
 		"read",
+		"rename",
 		"shell",
 		"shell-pipe",
 		"shell-wait",
@@ -53,7 +51,8 @@ var (
 		"mark-save",
 		"mark-remove",
 		"mark-load",
-		"rename",
+		"draw",
+		"load",
 		"sync",
 		"echo",
 		"echomsg",
@@ -64,6 +63,7 @@ var (
 		"glob-unselect",
 		"source",
 		"push",
+		"delete",
 	}
 
 	gOptWords = []string{
@@ -85,12 +85,12 @@ var (
 		"globsearch",
 		"noglobsearch",
 		"globsearch!",
-		"icons",
-		"noicons",
-		"icons!",
 		"hidden",
 		"nohidden",
 		"hidden!",
+		"icons",
+		"noicons",
+		"icons!",
 		"ignorecase",
 		"noignorecase",
 		"ignorecase!",
@@ -100,9 +100,15 @@ var (
 		"incsearch",
 		"noincsearch",
 		"incsearch!",
+		"number",
+		"nonumber",
+		"number!",
 		"preview",
 		"nopreview",
 		"preview!",
+		"relativenumber",
+		"norelativenumber",
+		"relativenumber!",
 		"reverse",
 		"noreverse",
 		"reverse!",
@@ -118,27 +124,22 @@ var (
 		"wrapscroll",
 		"nowrapscroll",
 		"wrapscroll!",
-		"number",
-		"nonumber",
-		"number!",
-		"relativenumber",
-		"norelativenumber",
-		"relativenumber!",
 		"findlen",
 		"period",
 		"scrolloff",
 		"tabstop",
 		"errorfmt",
 		"filesep",
+		"hiddenfiles",
 		"ifs",
+		"info",
 		"previewer",
 		"promptfmt",
+		"ratios",
 		"shell",
+		"shellopts",
 		"sortby",
 		"timefmt",
-		"ratios",
-		"info",
-		"shellopts",
 	}
 )
 
@@ -224,7 +225,7 @@ func matchExec(s string) (matches []string, longest string) {
 }
 
 func matchFile(s string) (matches []string, longest string) {
-	dir := strings.Replace(s, "~", gUser.HomeDir, -1)
+	dir := replaceTilde(s)
 
 	if !filepath.IsAbs(dir) {
 		wd, err := os.Getwd()
@@ -382,7 +383,7 @@ func completeShell(acc []rune) (matches []string, longestAcc []rune) {
 		longestAcc = []rune(longest)
 	default:
 		matches, longest = matchFile(f[len(f)-1])
-		longestAcc = append(acc[:len(acc)-len(f[len(f)-1])], []rune(longest)...)
+		longestAcc = append(acc[:len(acc)-len([]rune(f[len(f)-1]))], []rune(longest)...)
 	}
 
 	return
