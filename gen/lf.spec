@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name: lf
-Version: r13
+Version: r14
 Release: 1%{?dist}
 Summary: lf is a terminal file manager written in Go
 
@@ -9,7 +9,7 @@ License: MIT
 URL: https://github.com/gokcehan/lf
 Source0: %{url}/archive/%{version}.tar.gz
 
-BuildRequires: git golang
+BuildRequires: golang
 
 %description
 lf (as in "list files") is a terminal file manager written in Go. It is heavily inspired by ranger with some missing and extra features. Some of the missing features are deliberately omitted since they are better handled by external tools.
