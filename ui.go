@@ -480,15 +480,13 @@ func getWins(screen tcell.Screen) []*win {
 	wtot, htot := screen.Size()
 
 	h := max(htot-2, 0)
-	x := 0
-	y := 1
-	if gOpts.drawbox {
+	x, y := 0, 1
+	if gOpts.drawbox && gOpts.borderstyle&borderOutline != 0 {
 		h = max(htot-4, 0)
-		x = 1
-		y = 2
+		x, y = 1, 2
 	}
 
-	widths := getWidths(wtot, gOpts.ratios, gOpts.drawbox)
+	widths := getWidths(wtot, gOpts.ratios, gOpts.drawbox, gOpts.borderstyle)
 	wins := make([]*win, 0, len(widths))
 	for _, w := range widths {
 		wins = append(wins, newWin(w, h, x, y))
@@ -1020,37 +1018,52 @@ func (ui *ui) drawBox() {
 	st := parseEscapeSequence(gOpts.borderfmt)
 
 	w, h := ui.screen.Size()
+	style := gOpts.borderstyle
 
-	for i := 1; i < w-1; i++ {
-		ui.screen.PutStrStyled(i, 1, string(tcell.RuneHLine), st)
-		ui.screen.PutStrStyled(i, h-2, string(tcell.RuneHLine), st)
-	}
-
-	for i := 2; i < h-2; i++ {
-		ui.screen.PutStrStyled(0, i, string(tcell.RuneVLine), st)
-		ui.screen.PutStrStyled(w-1, i, string(tcell.RuneVLine), st)
-	}
-
-	if gOpts.roundbox {
-		ui.screen.PutStrStyled(0, 1, "╭", st)
-		ui.screen.PutStrStyled(w-1, 1, "╮", st)
-		ui.screen.PutStrStyled(0, h-2, "╰", st)
-		ui.screen.PutStrStyled(w-1, h-2, "╯", st)
-	} else {
-		ui.screen.PutStrStyled(0, 1, string(tcell.RuneULCorner), st)
-		ui.screen.PutStrStyled(w-1, 1, string(tcell.RuneURCorner), st)
-		ui.screen.PutStrStyled(0, h-2, string(tcell.RuneLLCorner), st)
-		ui.screen.PutStrStyled(w-1, h-2, string(tcell.RuneLRCorner), st)
-	}
-
-	wacc := 0
-	for wind := range len(ui.wins) - 1 {
-		wacc += ui.wins[wind].w + 1
-		ui.screen.PutStrStyled(wacc, 1, string(tcell.RuneTTee), st)
-		for i := 2; i < h-2; i++ {
-			ui.screen.PutStrStyled(wacc, i, string(tcell.RuneVLine), st)
+	if style&borderOutline != 0 {
+		for i := 1; i < w-1; i++ {
+			ui.screen.PutStrStyled(i, 1, string(tcell.RuneHLine), st)
+			ui.screen.PutStrStyled(i, h-2, string(tcell.RuneHLine), st)
 		}
-		ui.screen.PutStrStyled(wacc, h-2, string(tcell.RuneBTee), st)
+
+		for i := 2; i < h-2; i++ {
+			ui.screen.PutStrStyled(0, i, string(tcell.RuneVLine), st)
+			ui.screen.PutStrStyled(w-1, i, string(tcell.RuneVLine), st)
+		}
+
+		if style&borderRound != 0 {
+			ui.screen.PutStrStyled(0, 1, "╭", st)
+			ui.screen.PutStrStyled(w-1, 1, "╮", st)
+			ui.screen.PutStrStyled(0, h-2, "╰", st)
+			ui.screen.PutStrStyled(w-1, h-2, "╯", st)
+		} else {
+			ui.screen.PutStrStyled(0, 1, string(tcell.RuneULCorner), st)
+			ui.screen.PutStrStyled(w-1, 1, string(tcell.RuneURCorner), st)
+			ui.screen.PutStrStyled(0, h-2, string(tcell.RuneLLCorner), st)
+			ui.screen.PutStrStyled(w-1, h-2, string(tcell.RuneLRCorner), st)
+		}
+	}
+
+	if style&borderSeparators == 0 {
+		return
+	}
+
+	top, bot := 1, h-1
+	if style&borderOutline != 0 {
+		top, bot = 2, h-2
+	}
+
+	for wind := range len(ui.wins) - 1 {
+		x := ui.wins[wind].x + ui.wins[wind].w
+		if style&borderOutline != 0 {
+			ui.screen.PutStrStyled(x, 1, string(tcell.RuneTTee), st)
+		}
+		for y := top; y < bot; y++ {
+			ui.screen.PutStrStyled(x, y, string(tcell.RuneVLine), st)
+		}
+		if style&borderOutline != 0 {
+			ui.screen.PutStrStyled(x, h-2, string(tcell.RuneBTee), st)
+		}
 	}
 }
 

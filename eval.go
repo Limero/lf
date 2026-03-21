@@ -154,8 +154,9 @@ func (e *setExpr) eval(app *app, _ []string) {
 		if err == nil {
 			app.nav.sort()
 		}
+	// DEPRECATED: remove after r42 is released
 	case "roundbox", "noroundbox", "roundbox!":
-		err = applyBoolOpt(&gOpts.roundbox, e)
+		app.ui.echoerr("option 'roundbox' is deprecated, use 'borderstyle' instead")
 	case "showbinds", "noshowbinds", "showbinds!":
 		err = applyBoolOpt(&gOpts.showbinds, e)
 	case "smartcase", "nosmartcase", "smartcase!":
@@ -202,6 +203,25 @@ func (e *setExpr) eval(app *app, _ []string) {
 		gOpts.cursorpreviewfmt = e.val
 	case "cutfmt":
 		gOpts.cutfmt = e.val
+	case "borderstyle":
+		switch e.val {
+		case "box":
+			gOpts.borderstyle = borderBox
+		case "roundbox":
+			gOpts.borderstyle = borderRoundBox
+		case "outline":
+			gOpts.borderstyle = borderOutline
+		case "roundoutline":
+			gOpts.borderstyle = borderRoundOutline
+		case "separators":
+			gOpts.borderstyle = borderSeparators
+		default:
+			app.ui.echoerr("borderstyle: value should either be 'box', 'roundbox', 'outline', 'roundoutline' or 'separators'")
+			return
+		}
+		app.ui.renew()
+		app.nav.resize(app.ui)
+		app.ui.loadFile(app, true)
 	case "dupfilefmt":
 		gOpts.dupfilefmt = e.val
 	case "errorfmt":

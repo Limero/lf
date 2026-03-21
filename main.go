@@ -101,10 +101,13 @@ func exportFlags() {
 
 // used by exportOpts below
 func fieldToString(field reflect.Value) string {
-	kind := field.Kind()
-	var value string
+	// prevent returning <main.borderStyle Value>
+	if field.Type() == reflect.TypeFor[borderStyle]() {
+		return borderStyle(field.Uint()).String()
+	}
 
-	switch kind {
+	var value string
+	switch field.Kind() {
 	case reflect.Int:
 		value = strconv.Itoa(int(field.Int()))
 	case reflect.Bool:

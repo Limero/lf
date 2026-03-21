@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"maps"
 	"time"
 )
@@ -50,10 +51,40 @@ const (
 	blinkBarCursor       cursorStyle = "blinkbar"
 )
 
+type borderStyle byte
+
+const (
+	borderOutline borderStyle = 1 << iota
+	borderSeparators
+	borderRound
+
+	borderBox          = borderOutline | borderSeparators
+	borderRoundOutline = borderOutline | borderRound
+	borderRoundBox     = borderBox | borderRound
+)
+
+func (s borderStyle) String() string {
+	switch s {
+	case borderBox:
+		return "box"
+	case borderRoundBox:
+		return "roundbox"
+	case borderOutline:
+		return "outline"
+	case borderRoundOutline:
+		return "roundoutline"
+	case borderSeparators:
+		return "separators"
+	default:
+		return fmt.Sprintf("borderStyle(%d)", s)
+	}
+}
+
 var gOpts struct {
 	anchorfind       bool
 	autoquit         bool
 	borderfmt        string
+	borderstyle      borderStyle
 	cleaner          string
 	copyfmt          string
 	cursoractivefmt  string
@@ -99,7 +130,6 @@ var gOpts struct {
 	ratios           []int
 	relativenumber   bool
 	reverse          bool
-	roundbox         bool
 	rulerfile        string
 	rulerfmt         string
 	scrolloff        int
@@ -197,6 +227,7 @@ func init() {
 	gOpts.anchorfind = true
 	gOpts.autoquit = true
 	gOpts.borderfmt = "\033[0m"
+	gOpts.borderstyle = borderBox
 	gOpts.cleaner = ""
 	gOpts.copyfmt = "\033[7;33m"
 	gOpts.cursoractivefmt = "\033[7m"
@@ -242,7 +273,6 @@ func init() {
 	gOpts.ratios = []int{1, 2, 3}
 	gOpts.relativenumber = false
 	gOpts.reverse = false
-	gOpts.roundbox = false
 	gOpts.rulerfile = ""
 	gOpts.rulerfmt = ""
 	gOpts.scrolloff = 0
