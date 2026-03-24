@@ -934,6 +934,17 @@ func (nav *nav) preview(path string, win *win, mode string) {
 	if binary {
 		lines = []string{"\033[7mbinary\033[0m"}
 	}
+
+	// The internal previewer reads raw file content which may contain
+	// escape sequences that corrupt the display or enable code execution
+	// (e.g. OSC 52 clipboard writes). Strip all control characters.
+	if len(gOpts.previewer) == 0 && !binary {
+		sixel = false
+		for i, l := range lines {
+			lines[i] = stripAllSequences(l)
+		}
+	}
+
 	reg.lines = lines
 	reg.sixel = sixel
 }

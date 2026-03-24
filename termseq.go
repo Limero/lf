@@ -270,3 +270,15 @@ func applyOSC(body string, st tcell.Style) tcell.Style {
 		return st
 	}
 }
+
+// stripAllSequences removes all control characters from a string, keeping
+// only printable characters and tabs. This is used to
+// sanitize raw file content for the internal previewer.
+func stripAllSequences(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 0x20 && r != 0x7F || r == '\t' {
+			return r
+		}
+		return -1
+	}, s)
+}

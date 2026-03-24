@@ -35,6 +35,12 @@ func (win *win) renew(w, h, x, y int) {
 	win.w, win.h, win.x, win.y = w, h, x, y
 }
 
+// isPrintable reports whether sequence is safe to display.
+// It rejects C0 control characters (0x00-0x1F) and DEL (0x7F).
+func isPrintable(gc string) bool {
+	return gc[0] >= 0x20 && gc[0] != 0x7F
+}
+
 // printLength returns the display width of s in terminal cells.
 //
 // It ignores supported terminal control sequences (see [readTermSequence])
@@ -55,7 +61,7 @@ func printLength(s string) int {
 
 		if gc == "\t" {
 			length += gOpts.tabstop - length%gOpts.tabstop
-		} else {
+		} else if isPrintable(gc) {
 			length += w
 		}
 	}
@@ -89,7 +95,7 @@ func (win *win) print(screen tcell.Screen, x, y int, st tcell.Style, s string) t
 		if gc == "\t" {
 			w := gOpts.tabstop - (x+off+printLength(b.String()))%gOpts.tabstop
 			b.WriteString(strings.Repeat(" ", w))
-		} else if gc != "\r" && gc != "\n" {
+		} else if isPrintable(gc) {
 			b.WriteString(gc)
 		}
 
