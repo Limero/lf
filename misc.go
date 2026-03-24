@@ -464,9 +464,13 @@ func deletePathRecursive[T any](m map[string]T, path string) {
 // readLines reads lines from a file to be displayed as a preview.
 // The number of lines to read is capped since files can be very large.
 // Lines are split on `\n` characters, and `\r` characters are discarded.
+// Individual lines are truncated to avoid unbounded memory usage on files
+// with very long or no newlines.
 // Sixel images are also detected and stored as separate lines.
 // The presence of a null byte outside a sixel image indicates a binary file.
 func readLines(reader io.ByteReader, maxLines int) (lines []string, binary bool, sixel bool) {
+	const maxLineBytes = 1 << 16 // 64 KiB per line
+
 	var buf bytes.Buffer
 	var last byte
 	inSixel := false
@@ -513,7 +517,7 @@ func readLines(reader io.ByteReader, maxLines int) (lines []string, binary bool,
 				buf.WriteByte(last)
 				buf.WriteByte(b)
 			case b == '\r':
-			case b == '\n':
+			case b == '\n', buf.Len() >= maxLineBytes:
 				lines = append(lines, buf.String())
 				buf.Reset()
 				if len(lines) >= maxLines {
