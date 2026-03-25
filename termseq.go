@@ -57,11 +57,17 @@ func readTermSequence(s string) string {
 
 	switch s[1] {
 	case '[': // CSI
-		i := strings.IndexAny(s[:min(slen, 64)], "mK")
-		if i == -1 {
-			return ""
+		// Find the final byte (0x40-0x7E per ECMA-48), then check
+		// if it indicates a sequence we support (SGR or EL).
+		for i := 2; i < min(slen, 64); i++ {
+			if s[i] >= 0x40 && s[i] <= 0x7E {
+				if s[i] == 'm' || s[i] == 'K' {
+					return s[:i+1]
+				}
+				return ""
+			}
 		}
-		return s[:i+1]
+		return ""
 	case ']': // OSC
 		if slen < 4 || s[2] != '8' || s[3] != ';' {
 			return ""

@@ -73,6 +73,66 @@ func TestReadTermSequence(t *testing.T) {
 		{"\x1b[31", ""},              // CSI incomplete (no terminator)
 		{"foo\x1b[31m", ""},          // doesn't start with ESC
 
+		// CSI sequences with non-SGR/EL final bytes must be rejected.
+		// The final byte is the first byte in 0x40-0x7E (per ECMA-48).
+		{"\x1b[2J", ""},     // erase display (final byte 'J')
+		{"\x1b[H", ""},      // cursor home (final byte 'H')
+		{"\x1b[6n", ""},     // device status report (final byte 'n')
+		{"\x1b[?25l", ""},   // cursor hide (final byte 'l')
+		{"\x1b[?25h", ""},   // cursor show (final byte 'h')
+		{"\x1b[10;1H", ""},  // cursor position (final byte 'H')
+		{"\x1b[3S", ""},     // scroll up (final byte 'S')
+		{"\x1b[3T", ""},     // scroll down (final byte 'T')
+		{"\x1b[?1049h", ""}, // alt screen (final byte 'h')
+
+		// Regression: dangerous CSI followed by text containing 'm' or 'K'.
+		// The old parser searched for 'm'/'K' anywhere in the next 64 bytes,
+		// which would incorrectly consume the text after the CSI sequence.
+		{"\x1b[2Jsome text with m", ""},  // 'J' is the final byte, not 'm'
+		{"\x1b[6nfile.mkv", ""},          // 'n' is the final byte, not the later 'k'
+		{"\x1b[Htext_with_K_in_it", ""},  // 'H' is the final byte, not 'K'
+		{"\x1b[?25lhidden_cursor_m", ""}, // 'l' is the final byte, not 'm'
+		{"\x1b[2JKKKK", ""},              // 'J' is the final byte, not 'K'
+		{"\x1b[6nmmm", ""},               // 'n' is the final byte, not 'm'
+		{"\x1b[3SMakefile", ""},          // 'S' is the final byte, not later 'e'
+
+		// Valid SGR and EL must still work when followed by text with m/K
+		{"\x1b[31mtext with K", "\x1b[31m"}, // 'm' is correctly the final byte
+		{"\x1b[Krest of line m", "\x1b[K"},  // 'K' is correctly the final byte
+		{"\x1b[0Kmore text m", "\x1b[0K"},   // 'K' is correctly the final byte
+
+		// Every CSI final byte (0x40-0x7E): only 'm' (0x6D) and 'K' (0x4B) accepted
+		{"\x1b[1@", ""},        // ICH
+		{"\x1b[1A", ""},        // CUU
+		{"\x1b[1B", ""},        // CUD
+		{"\x1b[1C", ""},        // CUF
+		{"\x1b[1D", ""},        // CUB
+		{"\x1b[1E", ""},        // CNL
+		{"\x1b[1F", ""},        // CPL
+		{"\x1b[1G", ""},        // CHA
+		{"\x1b[1J", ""},        // ED
+		{"\x1b[1K", "\x1b[1K"}, // EL — accepted
+		{"\x1b[1L", ""},        // IL
+		{"\x1b[1M", ""},        // DL
+		{"\x1b[1P", ""},        // DCH
+		{"\x1b[1S", ""},        // SU
+		{"\x1b[1T", ""},        // SD
+		{"\x1b[1X", ""},        // ECH
+		{"\x1b[1Z", ""},        // CBT
+		{"\x1b[1`", ""},        // HPA
+		{"\x1b[1a", ""},        // HPR
+		{"\x1b[1d", ""},        // VPA
+		{"\x1b[1f", ""},        // HVP
+		{"\x1b[1h", ""},        // SM
+		{"\x1b[1l", ""},        // RM
+		{"\x1b[1m", "\x1b[1m"}, // SGR — accepted
+		{"\x1b[1n", ""},        // DSR
+		{"\x1b[1p", ""},        // DECSTR (private)
+		{"\x1b[1q", ""},        // DECLL
+		{"\x1b[1r", ""},        // DECSTBM
+		{"\x1b[1t", ""},        // window ops
+		{"\x1b[1~", ""},        // vt key
+
 		{"\x1b]8;;https://example.com\x1b\\", "\x1b]8;;https://example.com\x1b\\"}, // OSC 8 (ST terminator)
 		{"\x1b]8;;https://example.com\x07", "\x1b]8;;https://example.com\x07"},     // OSC 8 (BEL terminator)
 		{"\x1b]0;title\x07", ""}, // non-OSC8 OSC (ignored)
