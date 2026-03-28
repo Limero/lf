@@ -700,7 +700,7 @@ func formatRulerOpt(name, val string) string {
 
 	// display name of builtin options for clarity
 	if !strings.HasPrefix(name, "lf_user_") {
-		return fmt.Sprintf("%s=%s", strings.TrimPrefix(name, "lf_"), val)
+		return strings.TrimPrefix(name, "lf_") + "=" + val
 	}
 
 	return val
@@ -787,67 +787,76 @@ func (ui *ui) drawRuler(nav *nav) {
 		numClipMove = len(nav.clipboard.paths)
 	}
 
-	currSelections := nav.currSelections()
-	currVSelections := nav.currDir().visualSelections()
+	numCurrSelections := len(nav.currSelections())
+	numCurrVSelections := len(nav.currDir().visualSelections())
 
-	progress := []string{}
+	var progress strings.Builder
 
 	if nav.copyJobs > 0 {
 		if nav.copyTotal == 0 {
-			progress = append(progress, fmt.Sprintf("[0%%]"))
+			progress.WriteString("[0%] ")
 		} else {
-			progress = append(progress, fmt.Sprintf("[%d%%]", nav.copyBytes*100/nav.copyTotal))
+			progress.WriteString("[" + strconv.FormatInt(nav.copyBytes*100/nav.copyTotal, 10) + "%] ")
 		}
 	}
 
 	if nav.moveTotal > 0 {
-		progress = append(progress, fmt.Sprintf("[%d/%d]", nav.moveCount, nav.moveTotal))
+		progress.WriteString("[" + strconv.Itoa(nav.moveCount) + "/" + strconv.Itoa(nav.moveTotal) + "] ")
 	}
 
 	if nav.deleteTotal > 0 {
-		progress = append(progress, fmt.Sprintf("[%d/%d]", nav.deleteCount, nav.deleteTotal))
+		progress.WriteString("[" + strconv.Itoa(nav.deleteCount) + "/" + strconv.Itoa(nav.deleteTotal) + "] ")
 	}
 
 	opts := getOptsMap()
 
 	rulerfmt := strings.ReplaceAll(gOpts.rulerfmt, "|", "\x1f")
 	rulerfmt = reRulerSub.ReplaceAllStringFunc(rulerfmt, func(s string) string {
-		var result string
+		empty := "\x00"
 		switch s {
 		case "%a":
-			result = acc
+			return cmp.Or(acc, empty)
 		case "%p":
-			result = strings.Join(progress, " ")
+			return cmp.Or(strings.TrimSuffix(progress.String(), " "), empty)
 		case "%m":
-			result = fmt.Sprintf("%.d", numClipMove)
+			if numClipMove == 0 {
+				return empty
+			}
+			return strconv.Itoa(numClipMove)
 		case "%c":
-			result = fmt.Sprintf("%.d", numClipCopy)
+			if numClipCopy == 0 {
+				return empty
+			}
+			return strconv.Itoa(numClipCopy)
 		case "%s":
-			result = fmt.Sprintf("%.d", len(currSelections))
+			if numCurrSelections == 0 {
+				return empty
+			}
+			return strconv.Itoa(numCurrSelections)
 		case "%v":
-			result = fmt.Sprintf("%.d", len(currVSelections))
+			if numCurrVSelections == 0 {
+				return empty
+			}
+			return strconv.Itoa(numCurrVSelections)
 		case "%f":
-			result = strings.Join(dir.filter, " ")
+			return cmp.Or(strings.Join(dir.filter, " "), empty)
 		case "%i":
-			result = strconv.Itoa(ind)
+			return strconv.Itoa(ind)
 		case "%t":
-			result = strconv.Itoa(tot)
+			return strconv.Itoa(tot)
 		case "%h":
-			result = strconv.Itoa(hid)
+			return strconv.Itoa(hid)
 		case "%P":
-			result = percentage
+			return percentage
 		case "%d":
-			result = diskFree(dir.path)
+			return cmp.Or(diskFree(dir.path), empty)
 		default:
 			s = strings.TrimSuffix(strings.TrimPrefix(s, "%{"), "}")
 			if val, ok := opts[s]; ok {
-				result = formatRulerOpt(s, val)
+				return cmp.Or(formatRulerOpt(s, val), empty)
 			}
+			return empty
 		}
-		if result == "" {
-			return "\x00"
-		}
-		return result
 	})
 	var ruler strings.Builder
 	for section := range strings.SplitSeq(rulerfmt, "\x1f") {
