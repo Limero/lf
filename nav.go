@@ -937,11 +937,12 @@ func (nav *nav) preview(path string, win *win, mode string) {
 
 	// The internal previewer reads raw file content which may contain
 	// escape sequences that corrupt the display or enable code execution
-	// (e.g. OSC 52 clipboard writes). Strip all control characters.
+	// (e.g. OSC 52 clipboard writes). Replace control characters with
+	// U+FFFD so they are visible but cannot form escape sequences.
 	if len(gOpts.previewer) == 0 && !binary {
 		sixel = false
 		for i, l := range lines {
-			lines[i] = stripAllSequences(l)
+			lines[i] = sanitizeForDisplay(l)
 		}
 	}
 

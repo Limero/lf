@@ -36,10 +36,14 @@ func (win *win) renew(w, h, x, y int) {
 	win.w, win.h, win.x, win.y = w, h, x, y
 }
 
-// isPrintable reports whether sequence is safe to display.
-// It rejects C0 control characters (0x00-0x1F) and DEL (0x7F).
+// isPrintable reports whether a grapheme cluster is safe to display.
+// It rejects C0/C1 controls, DEL, and invalid UTF-8.
 func isPrintable(gc string) bool {
-	return gc[0] >= 0x20 && gc[0] != 0x7F
+	r, size := utf8.DecodeRuneInString(gc)
+	if r == utf8.RuneError && size <= 1 {
+		return false
+	}
+	return !isControlChar(r)
 }
 
 // printLength returns the display width of s in terminal cells.
@@ -64,6 +68,8 @@ func printLength(s string) int {
 			length += gOpts.tabstop - length%gOpts.tabstop
 		} else if isPrintable(gc) {
 			length += w
+		} else {
+			length++ // U+FFFD replacement has width 1
 		}
 	}
 
@@ -98,6 +104,8 @@ func (win *win) print(screen tcell.Screen, x, y int, st tcell.Style, s string) t
 			b.WriteString(strings.Repeat(" ", w))
 		} else if isPrintable(gc) {
 			b.WriteString(gc)
+		} else {
+			b.WriteString("\uFFFD")
 		}
 
 		i += len(gc)
@@ -648,7 +656,7 @@ func (ui *ui) drawPromptLine(nav *nav) {
 
 	var fname string
 	if curr := nav.currFile(); curr != nil {
-		fname = filepath.Base(curr.path)
+		fname = sanitizeName(filepath.Base(curr.path))
 	}
 
 	var prompt string
@@ -746,7 +754,7 @@ func (ui *ui) drawStat(nav *nav) {
 	replace("%s", humanize(curr.Size()))
 	replace("%S", fmt.Sprintf("%5s", humanize(curr.Size())))
 	replace("%t", curr.ModTime().Format(gOpts.timefmt))
-	replace("%l", curr.linkTarget)
+	replace("%l", sanitizeName(curr.linkTarget))
 
 	var fileInfo strings.Builder
 	for section := range strings.SplitSeq(statfmt, "\x1f") {
@@ -882,8 +890,8 @@ func (ui *ui) drawRulerFile(nav *nav) {
 	if curr != nil {
 		if curr.err == nil {
 			stat = &statData{
-				Path:        curr.path,
-				Name:        curr.Name(),
+				Path:        sanitizeName(curr.path),
+				Name:        sanitizeName(curr.Name()),
 				Extension:   curr.ext,
 				Size:        curr.Size(),
 				DirSize:     curr.dirSize,
@@ -896,7 +904,7 @@ func (ui *ui) drawRulerFile(nav *nav) {
 				LinkCount:   linkCount(curr),
 				User:        userName(curr),
 				Group:       groupName(curr),
-				Target:      curr.linkTarget,
+				Target:      sanitizeName(curr.linkTarget),
 				CustomInfo:  curr.customInfo,
 			}
 		} else {

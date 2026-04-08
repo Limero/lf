@@ -277,14 +277,34 @@ func applyOSC(body string, st tcell.Style) tcell.Style {
 	}
 }
 
-// stripAllSequences removes all control characters from a string, keeping
-// only printable characters and tabs. This is used to
-// sanitize raw file content for the internal previewer.
-func stripAllSequences(s string) string {
+// isControlChar reports whether a rune is a control character or otherwise
+// unsafe to display in a terminal.
+// Covers C0 (0x00-0x1F), DEL (0x7F), and C1 (0x80-0x9F).
+func isControlChar(r rune) bool {
+	return r < 0x20 || r == 0x7F || r >= 0x80 && r <= 0x9F
+}
+
+// sanitizeForDisplay replaces control characters and invalid bytes with the
+// Unicode replacement character (U+FFFD). Tabs are preserved for content
+// where tab expansion is handled by the renderer (e.g. preview panes).
+func sanitizeForDisplay(s string) string {
 	return strings.Map(func(r rune) rune {
-		if r >= 0x20 && r != 0x7F || r == '\t' {
+		if r == '\t' || !isControlChar(r) {
 			return r
 		}
-		return -1
+		return '\uFFFD'
+	}, s)
+}
+
+// sanitizeName sanitizes a filename, path, or symlink target for display.
+// Unlike sanitizeForDisplay it also replaces tabs, because tabs in names
+// are expanded by the renderer to tabstop width while uniseg.StringWidth
+// counts them as width 1, causing column overflow.
+func sanitizeName(s string) string {
+	return strings.Map(func(r rune) rune {
+		if !isControlChar(r) {
+			return r
+		}
+		return '\uFFFD'
 	}, s)
 }

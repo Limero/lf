@@ -431,12 +431,12 @@ func getFileExtension(file fs.FileInfo) string {
 // The file extension is not affected by truncation, however it will be clipped
 // if it exceeds the allowed width.
 func truncateFilename(file fs.FileInfo, maxWidth, truncatePct int, truncateChar string) string {
-	filename := file.Name()
+	filename := sanitizeName(file.Name())
 	if uniseg.StringWidth(filename) <= maxWidth {
 		return filename
 	}
 
-	ext := getFileExtension(file)
+	ext := sanitizeName(getFileExtension(file))
 	avail := maxWidth - uniseg.StringWidth(truncateChar) - uniseg.StringWidth(ext)
 	if avail < 0 {
 		return truncateRight(truncateChar+ext, maxWidth)
@@ -527,9 +527,17 @@ func readLines(reader io.ByteReader, maxLines int) (lines []string, binary bool,
 				currState = stateNormal
 			}
 		case stateSixel:
-			buf.WriteByte(b)
-			if b == '\033' {
+			// Accept printable bytes (0x20-0x7E) and ESC inside the
+			// DCS frame. Reject everything else (C0, DEL, 0x80+).
+			switch {
+			case b == '\033':
+				buf.WriteByte(b)
 				currState = stateSixelEsc
+			case b >= 0x20 && b <= 0x7E:
+				buf.WriteByte(b)
+			default:
+				buf.Reset()
+				currState = stateNormal
 			}
 		case stateSixelEsc:
 			buf.WriteByte(b)
