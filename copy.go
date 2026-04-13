@@ -94,10 +94,6 @@ func copyFile(src, dst string, preserve []string, info os.FileInfo, nums chan<- 
 		mtime := info.ModTime()
 		if err := os.Chtimes(dst, atime, mtime); err != nil {
 			errs <- err
-			if err = os.Remove(dst); err != nil {
-				errs <- err
-			}
-			return
 		}
 	}
 }
@@ -175,7 +171,7 @@ func copyAll(srcs []string, dstDir string, preserve []string) (nums chan int64, 
 			atime := times.Get(info).AccessTime()
 			mtime := info.ModTime()
 			if err := os.Chtimes(path, atime, mtime); err != nil {
-				errs <- fmt.Errorf("chtimes: %w", err)
+				errs <- err
 			}
 		}
 
