@@ -105,7 +105,7 @@ func init() {
 	gHistoryPath = filepath.Join(data, "lf", "history")
 
 	runtime := os.TempDir()
-	gDefaultSocketPath = filepath.Join(runtime, fmt.Sprintf("lf.%s.sock", gUser.Username))
+	gDefaultSocketPath = filepath.Join(runtime, "lf."+gUser.Username+".sock")
 
 	s := cmp.Or(os.Getenv("PATHEXT"), ".COM;.EXE;.BAT;.CMD")
 	for ext := range strings.SplitSeq(s, ";") {
@@ -131,7 +131,7 @@ func shellCommand(s string, args []string) *exec.Cmd {
 			fmt.Fprintf(&builder, ` "%s"`, arg)
 		}
 		shellOpts := strings.Join(gOpts.shellopts, " ")
-		cmdline := fmt.Sprintf(`%s %s %s "%s"`, gOpts.shell, shellOpts, gOpts.shellflag, builder.String())
+		cmdline := gOpts.shell + " " + shellOpts + " " + gOpts.shellflag + ` "` + builder.String() + `"`
 
 		cmd := exec.Command(gOpts.shell)
 		cmd.SysProcAttr = &windows.SysProcAttr{CmdLine: cmdline}
@@ -223,7 +223,7 @@ func errCrossDevice(err error) bool {
 func quoteString(s string) string {
 	// Windows CMD requires special handling to deal with quoted arguments
 	if strings.ToLower(gOpts.shell) == "cmd" {
-		return fmt.Sprintf(`"%s"`, s)
+		return `"` + s + `"`
 	}
 	return s
 }
@@ -231,7 +231,7 @@ func quoteString(s string) string {
 func shellEscape(s string) string {
 	for _, r := range s {
 		if strings.ContainsRune(" !%&'()+,;=[]^`{}~", r) {
-			return fmt.Sprintf(`"%s"`, s)
+			return `"` + s + `"`
 		}
 	}
 	return s

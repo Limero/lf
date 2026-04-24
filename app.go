@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -84,7 +85,7 @@ func (app *app) quit() {
 		}
 	}
 	if !gSingleMode {
-		if _, err := remote(fmt.Sprintf("drop %d", gClientID)); err != nil {
+		if _, err := remote("drop " + strconv.Itoa(gClientID)); err != nil {
 			log.Printf("dropping connection: %s", err)
 		}
 		if gOpts.autoquit {

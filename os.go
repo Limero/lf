@@ -4,7 +4,6 @@ package main
 
 import (
 	"cmp"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -117,7 +116,7 @@ func init() {
 
 	runtime := cmp.Or(os.Getenv("XDG_RUNTIME_DIR"), os.TempDir())
 
-	gDefaultSocketPath = filepath.Join(runtime, fmt.Sprintf("lf.%s.sock", gUser.Username))
+	gDefaultSocketPath = filepath.Join(runtime, "lf."+gUser.Username+".sock")
 }
 
 func detachedCommand(name string, arg ...string) *exec.Cmd {
@@ -128,7 +127,7 @@ func detachedCommand(name string, arg ...string) *exec.Cmd {
 
 func shellCommand(s string, args []string) *exec.Cmd {
 	if len(gOpts.ifs) != 0 {
-		s = fmt.Sprintf("IFS='%s'; %s", gOpts.ifs, s)
+		s = "IFS='" + gOpts.ifs + "'; " + s
 	}
 
 	args = append([]string{gOpts.shellflag, s, "--"}, args...)

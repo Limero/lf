@@ -1321,7 +1321,7 @@ func (nav *nav) copyAsync(app *app, srcs []string, dstDir string) {
 	errCount := 0
 	sendErr := func(format string, a ...any) {
 		errCount++
-		msg := fmt.Sprintf("copy [%d]: %s", errCount, fmt.Sprintf(format, a...))
+		msg := "copy [" + strconv.Itoa(errCount) + "]: " + fmt.Sprintf(format, a...)
 		app.ui.exprChan <- &callExpr{"echoerr", []string{msg}, 1}
 	}
 
@@ -1381,7 +1381,7 @@ func (nav *nav) moveAsync(app *app, srcs []string, dstDir string) {
 	errCount := 0
 	sendErr := func(format string, a ...any) {
 		errCount++
-		msg := fmt.Sprintf("move [%d]: %s", errCount, fmt.Sprintf(format, a...))
+		msg := "move [" + strconv.Itoa(errCount) + "]: " + fmt.Sprintf(format, a...)
 		app.ui.exprChan <- &callExpr{"echoerr", []string{msg}, 1}
 	}
 
@@ -1522,7 +1522,7 @@ func (nav *nav) del(app *app) error {
 
 			if err := os.RemoveAll(path); err != nil {
 				errCount++
-				echo.args[0] = fmt.Sprintf("[%d] %s", errCount, err)
+				echo.args[0] = "[" + strconv.Itoa(errCount) + "] " + err.Error()
 				app.ui.exprChan <- echo
 			}
 		}
@@ -1535,7 +1535,7 @@ func (nav *nav) del(app *app) error {
 		} else {
 			if _, err := remote("send load"); err != nil {
 				errCount++
-				echo.args[0] = fmt.Sprintf("[%d] %s", errCount, err)
+				echo.args[0] = "[" + strconv.Itoa(errCount) + "] " + err.Error()
 				app.ui.exprChan <- echo
 			}
 		}

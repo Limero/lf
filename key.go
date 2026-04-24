@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -141,7 +140,7 @@ var reModKey = regexp.MustCompile(`<(c|s|a)-(.+)>`)
 func wrapModifier(s string, mod string) string {
 	s = strings.TrimPrefix(s, "<")
 	s = strings.TrimSuffix(s, ">")
-	return fmt.Sprintf("<%s-%s>", mod, s)
+	return "<" + mod + "-" + s + ">"
 }
 
 func addKeyModifier(s string, mod tcell.ModMask) string {

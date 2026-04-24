@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"maps"
+	"strconv"
 	"time"
 )
 
@@ -76,7 +76,7 @@ func (s borderStyle) String() string {
 	case borderSeparators:
 		return "separators"
 	default:
-		return fmt.Sprintf("borderStyle(%d)", s)
+		return "borderStyle(" + strconv.Itoa(int(s)) + ")"
 	}
 }
 

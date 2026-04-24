@@ -59,9 +59,9 @@ type setExpr struct {
 
 func (e *setExpr) String() string {
 	if e.val == "" {
-		return fmt.Sprintf("set %s", e.opt)
+		return "set " + e.opt
 	}
-	return fmt.Sprintf("set %s %s", e.opt, e.val)
+	return "set " + e.opt + " " + e.val
 }
 
 type setLocalExpr struct {
@@ -72,9 +72,9 @@ type setLocalExpr struct {
 
 func (e *setLocalExpr) String() string {
 	if e.val == "" {
-		return fmt.Sprintf("setlocal %s %s", e.path, e.opt)
+		return "setlocal " + e.path + " " + e.opt
 	}
-	return fmt.Sprintf("setlocal %s %s %s", e.path, e.opt, e.val)
+	return "setlocal " + e.path + " " + e.opt + " " + e.val
 }
 
 type mapExpr struct {
@@ -84,9 +84,9 @@ type mapExpr struct {
 
 func (e *mapExpr) String() string {
 	if e.expr == nil {
-		return fmt.Sprintf("map %s", e.keys)
+		return "map " + e.keys
 	}
-	return fmt.Sprintf("map %s %s", e.keys, e.expr)
+	return "map " + e.keys + " " + e.expr.String()
 }
 
 type nmapExpr struct {
@@ -96,9 +96,9 @@ type nmapExpr struct {
 
 func (e *nmapExpr) String() string {
 	if e.expr == nil {
-		return fmt.Sprintf("nmap %s", e.keys)
+		return "nmap " + e.keys
 	}
-	return fmt.Sprintf("nmap %s %s", e.keys, e.expr)
+	return "nmap " + e.keys + " " + e.expr.String()
 }
 
 type vmapExpr struct {
@@ -108,9 +108,9 @@ type vmapExpr struct {
 
 func (e *vmapExpr) String() string {
 	if e.expr == nil {
-		return fmt.Sprintf("vmap %s", e.keys)
+		return "vmap " + e.keys
 	}
-	return fmt.Sprintf("vmap %s %s", e.keys, e.expr)
+	return "vmap " + e.keys + " " + e.expr.String()
 }
 
 type cmapExpr struct {
@@ -120,9 +120,9 @@ type cmapExpr struct {
 
 func (e *cmapExpr) String() string {
 	if e.expr == nil {
-		return fmt.Sprintf("cmap %s", e.key)
+		return "cmap " + e.key
 	}
-	return fmt.Sprintf("cmap %s %s", e.key, e.expr)
+	return "cmap " + e.key + " " + e.expr.String()
 }
 
 type cmdExpr struct {
@@ -132,9 +132,9 @@ type cmdExpr struct {
 
 func (e *cmdExpr) String() string {
 	if e.expr == nil {
-		return fmt.Sprintf("cmd %s", e.name)
+		return "cmd " + e.name
 	}
-	return fmt.Sprintf("cmd %s %s", e.name, e.expr)
+	return "cmd " + e.name + " " + e.expr.String()
 }
 
 type callExpr struct {

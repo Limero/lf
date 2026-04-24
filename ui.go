@@ -922,7 +922,7 @@ func (ui *ui) drawRulerFile(nav *nav) {
 	if tot == 0 {
 		linePercentage = "100%"
 	} else {
-		linePercentage = fmt.Sprintf("%d%%", ind*100/tot)
+		linePercentage = strconv.Itoa(ind*100/tot) + "%"
 	}
 
 	var scrollPercentage string
@@ -953,18 +953,18 @@ func (ui *ui) drawRulerFile(nav *nav) {
 
 	if nav.copyJobs > 0 {
 		if nav.copyTotal == 0 {
-			progress = append(progress, fmt.Sprintf("[0%%]"))
+			progress = append(progress, "[0%]")
 		} else {
-			progress = append(progress, fmt.Sprintf("[%d%%]", nav.copyBytes*100/nav.copyTotal))
+			progress = append(progress, "["+strconv.FormatInt(nav.copyBytes*100/nav.copyTotal, 10)+"%]")
 		}
 	}
 
 	if nav.moveTotal > 0 {
-		progress = append(progress, fmt.Sprintf("[%d/%d]", nav.moveCount, nav.moveTotal))
+		progress = append(progress, "["+strconv.Itoa(nav.moveCount)+"/"+strconv.Itoa(nav.moveTotal)+"]")
 	}
 
 	if nav.deleteTotal > 0 {
-		progress = append(progress, fmt.Sprintf("[%d/%d]", nav.deleteCount, nav.deleteTotal))
+		progress = append(progress, "["+strconv.Itoa(nav.deleteCount)+"/"+strconv.Itoa(nav.deleteTotal)+"]")
 	}
 
 	mode := "NORMAL"

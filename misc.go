@@ -275,7 +275,7 @@ func humanize(size int64) string {
 	}
 
 	if size < base {
-		return fmt.Sprintf("%dB", size)
+		return strconv.FormatInt(size, 10) + "B"
 	}
 
 	// Note: due to [fs.FileInfo.Size] being `int64`, the maximum
@@ -298,18 +298,18 @@ func humanize(size int64) string {
 	for _, prefix := range prefixes {
 		// if curr < 99.95 then round to 1 decimal place
 		if curr.Cmp(big.NewRat(9995, 100)) < 0 {
-			return fmt.Sprintf("%s%s", curr.FloatString(1), prefix)
+			return curr.FloatString(1) + prefix
 		}
 
 		// if curr < base-0.5 then round to the nearest integer
 		if curr.Cmp(new(big.Rat).Sub(big.NewRat(base, 1), big.NewRat(1, 2))) < 0 {
-			return fmt.Sprintf("%s%s", curr.FloatString(0), prefix)
+			return curr.FloatString(0) + prefix
 		}
 
 		curr.Quo(curr, big.NewRat(base, 1))
 	}
 
-	return fmt.Sprintf("+999%s", prefixes[len(prefixes)-1])
+	return "+999" + prefixes[len(prefixes)-1]
 }
 
 // permString returns an ls(1)-style string representation of the given file
